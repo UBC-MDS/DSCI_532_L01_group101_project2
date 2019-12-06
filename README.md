@@ -26,12 +26,14 @@ Next week
 
 ## App Description and Sketch
 
-The app contains one page that includes four main plots and four summary statistics. The left column of plots visualize `life expectancy`, `change in life expectancy`, `GDP` (gross domestic product), and `percentage of GDP spent on health` over time. The right column of plots includes a geographic heat map that can compare `life expectancy`, `GDP`, or `percentage of GDP spent on health` and a histogram of the distribution of life expectancy.
+The app contains one page that includes four summary statistics and four main plots. The summary statistics are about the average life expectancy, average GDP around the world, standard deviation of GDP of all countries and the count of the countries in total in our dataset. The left column are line plots that visualize `life expectancy`, `GDP` (gross domestic product) over time by country or `life expectancy` and `GDP` change in percentage year over year. The right column of plots includes a geographic heat map that can compare `life expectancy`, `GDP`, or `GDP log` and a scatter plot of `life expectancy` by `GDP` or `GDP log` for selected year range for all countries.
 
-One of the most interesting features of this dashboard is the ability to change the variable each plot explores. By allowing the user to choose the variable of the y-axis and colour for time series plots, and the colour variable for the heat map, users are able to answer many potential questions with a limited number of plots and screen real estate.
+We include `GDP log` variable for the heat map and scatter plot, because of the right skewness of the GDP distribution of all countries. With `GDP log`, some patterns may become more obvious.
 
-The dashboard will also include interactive elements. Tooltips will be used on all data points to allow the user to see precise values. The summary numbers at the top of the dashboard will serve as a “grounding point” so the user can easily compare individual observations to in view averages. Users are also able to filter the entire dashboard based on `country status` (developing or not developing), `country`, and a range of `years`.
+One of the most interesting features of this dashboard is the ability to change the variable each plot explores. By allowing the user to choose the variable of the y-axis, select countries through filtered country status for time series plots, the colour variable for the heat map, and year range, x-axis for the scatter plot, users are able to answer many potential questions with a limited number of plots and screen real estate.
 
-![app-sketch](assets/app_screenshot_2019-11-28.png)
+The dashboard will also include interactive elements. Tooltips will be used on all data points to allow the user to see precise values. The summary numbers at the top of the dashboard will serve as a “grounding point” so the user can easily compare individual observations to in view averages. 
+
+![app-sketch](assets/app_screenshot_2019-12-05.png)
 
 
