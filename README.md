@@ -16,7 +16,8 @@ Team members (group 101):
 - [Code of Conduct](docs/team-code-of-conduct.md)
 - [App Description and Sketch](#app-description-and-sketch)  
 - Current progress:  
-    TODO: screen shot of plots
+
+![](assets/current_progress.png)
 
 ## Milestone 4:
 
