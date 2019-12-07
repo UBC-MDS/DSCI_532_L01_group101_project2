@@ -15,9 +15,12 @@ Team members (group 101):
 - [Project Proposal](docs/proposal.md)
 - [Code of Conduct](docs/team-code-of-conduct.md)
 - [App Description and Sketch](#app-description-and-sketch)  
-- Current progress:  
+- [Milestone1,2 and DashR app description comparison](https://github.com/UBC-MDS/DSCI_532_L01_group101_project2/compare/5a374c6ce7dc94bac847042b56afc7d8559ad6fd...13d3991ae907e43f8ff6a063787ea0efd5b68e9d)
+- Current progress screenshot:  
 
 ![](assets/current_progress.png)
+
+
 
 ## Milestone 4:
 
