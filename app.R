@@ -1,4 +1,3 @@
-
 library(dash)
 library(dashCoreComponents)
 library(dashHtmlComponents)
@@ -31,9 +30,7 @@ df <- read_csv("data/WHO_life_expectancy_data_clean.csv")
 #' make_line_plot(df, "change_in_gdp_percent", c("Canada", "Mexico"))
 make_line_plot <- function(df, selected_y_axis, selected_countries) {
 
-  ###########################
   # tidy df
-  ###########################
   df <- df %>%
     filter(country %in% selected_countries) %>%
     group_by(country, year) %>%
@@ -52,9 +49,7 @@ make_line_plot <- function(df, selected_y_axis, selected_countries) {
     ungroup() %>%
     arrange(country, year)
 
-  ###########################
   # plot labels
-  ###########################
   if (selected_y_axis == "gdp") {
     y_format <- scales::dollar
     y_axis_label <- "GDP (USD)"
@@ -81,9 +76,7 @@ make_line_plot <- function(df, selected_y_axis, selected_countries) {
       str_to_title()
   }
 
-  ###########################
   # create plot
-  ###########################
   fig <- df %>%
     ggplot(aes(x = year, y = !!sym(selected_y_axis), colour = country)) +
     # suppressed warnings b/c of bug “Ignoring unknown aesthetics: text”
@@ -120,8 +113,6 @@ colours <- list(
 )
 
 
-
-
 ###########################################
 # APP LAYOUT
 ###########################################
@@ -129,8 +120,7 @@ app$layout(
     htmlDiv(children = list(
         # ROW 1 - HEADER
         htmlDiv(className = "row", style = list("backgroundColor" = colours$ubc_blue, "padding" = "10px"), children = list(
-            htmlH1("Global Life Expectancy Trends", style = list("color" = colours$white)),
-            htmlH6("Overview of Inequality of Life Expectancy", style = list("color" = colours$white))
+            htmlH1("Global Life Expectancy Trends", style = list("color" = colours$white))
         )),
         # ROW 2 - DESCRIPTION AND BIG NUMBERS
         htmlDiv(className = "row", style = list("backgroundColor" = colours$white), children = list(
@@ -164,8 +154,11 @@ app$layout(
         htmlDiv(className = "row", style = list("backgroundColor" = colours$white), children = list(
             # ROW 3 - COLUMN 1
             htmlDiv(className = "pretty_container six columns", children = list(
-                htmlLabel("Select Countries:"),
+                htmlH6("Filters - Line Plots"),
+                htmlLabel("Select line plot countries:"),
                 dccDropdown(id = "dropdown_country", value = c("Italy", "France"), multi = TRUE, map(unique(df$country), ~ list(label = .x, value = .x))),
+                htmlLabel("Select line plot y-axis values:"),
+                dccRadioItems(id = "radio_line_y_axis", value = "Original Number", options = list(list(label = "Original Number", value = "Original Number"), list(label = "Change in Percent", value = "Change in Percent"))),
                 htmlBr(),
                 dccGraph(id = "line_life_expectancy"),
                 htmlBr(),
@@ -174,9 +167,27 @@ app$layout(
             )),
             # ROW 3 - COLUMN 2
             htmlDiv(className = "pretty_container six columns", children = list(
-                htmlH6("Map"),
-                htmlBr(),
-                htmlH6("Scatter")
+              # heat map
+              htmlH6("Filters - Heat Map"),
+              htmlLabel("Select heat map colour values:"),
+              dccRadioItems(id = "radio_heat_map_colour", value = "Life Expectancy", options = list(list(label = "Life Expectancy", value = "Life Expectancy"), list(label = "GDP", value = "GDP"), list(label = "GDP Log", value = "GDP Log"))),
+              htmlBr(),
+              dccGraph(id = "heat_map"),
+              htmlHr(),
+              # scatter plot
+              htmlH6("Filters - Scatter Plot"),
+              htmlDiv(className = "row", children = list(
+                htmlDiv(className = "six columns", children = list(
+                  htmlLabel("Select scatter plot colour values:"),
+                  dccRadioItems(id = "radio_scatter_colour", value = "Life Expectancy", options = list(list(label = "Status", value = "Status"), list(label = "Country", value = "Country")))
+                )),
+                htmlDiv(className = "six columns", children = list(
+                  htmlLabel("Select scatter plot x-axis values:"),
+                  dccRadioItems(id = "radio_scatter_x_axis", value = "GPD", options = list(list(label = "GDP", value = "GDP"), list(label = "GDP Log", value = "GDP Log")))
+                ))
+              )),
+              htmlBr(),
+              dccGraph(id = "scatter_plot")
             ))
         )),
         # ROW 4 - LINKS
@@ -202,18 +213,30 @@ app$layout(
 # Line plot - Life expectancy
 app$callback(
     output = list(id = "line_life_expectancy", property = "figure"),
-    params = list(input(id = "dropdown_country", property = "value")),
-    function(selected_countries){
-        make_line_plot(df, "life_expectancy", selected_countries)
+    params = list(input(id = "dropdown_country", property = "value"),
+                  input(id = "radio_line_y_axis", property = "value")),
+    function(selected_countries, selected_y_axis){
+      if (selected_y_axis == "Original Number"){
+        selected_y <- "life_expectancy"
+      } else if (selected_y_axis == "Change in Percent"){
+        selected_y <- "change_in_life_expectancy_percent"
+      }
+      make_line_plot(df, selected_y, selected_countries)
     }
 )
 
 # Line plot - GDP
 app$callback(
     output = list(id = "line_gdp", property = "figure"),
-    params = list(input(id = "dropdown_country", property = "value")),
-    function(selected_countries){
-        make_line_plot(df, "gdp", selected_countries)
+    params = list(input(id = "dropdown_country", property = "value"),
+                  input(id = "radio_line_y_axis", property = "value")),
+    function(selected_countries, selected_y_axis){
+      if (selected_y_axis == "Original Number"){
+        selected_y <- "gdp"
+      } else if (selected_y_axis == "Change in Percent"){
+        selected_y <- "change_in_gdp_percent"
+      }
+        make_line_plot(df, selected_y, selected_countries)
     }
 )
 
