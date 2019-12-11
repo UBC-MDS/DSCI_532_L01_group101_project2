@@ -1,0 +1,248 @@
+library(dash)
+library(dashCoreComponents)
+library(dashHtmlComponents)
+library(dashTable)
+library(plotly)
+library(stringi)
+library(tidyverse)
+
+###########################################
+# DATA
+###########################################
+df <- read_csv("data/WHO_life_expectancy_data_clean.csv")
+
+###########################################
+# PLOTTING FUNCTIONS
+###########################################
+
+#' Make line plots
+#'
+#' @param df The data frame to create plot with
+#' @param selected_y_axis The column name to plot on the y-axis
+#' @param selected_countries A vector containing all countries to include
+#'
+#' @return Plotly plot
+#'
+#' @examples
+#' make_line_plot(df, "life_expectancy", c("Canada", "Mexico"))
+#' make_line_plot(df, "change_in_life_expectancy_percent", c("Canada", "Mexico"))
+#' make_line_plot(df, "gdp", c("Canada", "Mexico"))
+#' make_line_plot(df, "change_in_gdp_percent", c("Canada", "Mexico"))
+make_line_plot <- function(df, selected_y_axis, selected_countries) {
+
+  # tidy df
+  df <- df %>%
+    filter(country %in% selected_countries) %>%
+    group_by(country, year) %>%
+    summarise(
+      gdp = mean(gdp),
+      life_expectancy = mean(life_expectancy)
+    ) %>%
+    ungroup() %>%
+    group_by(country) %>%
+    mutate(
+      change_in_gdp = gdp - lag(gdp),
+      change_in_gdp_percent = (gdp - lag(gdp)) / lag(gdp),
+      change_in_life_expectancy = life_expectancy - lag(life_expectancy),
+      change_in_life_expectancy_percent = (life_expectancy - lag(life_expectancy)) / lag(life_expectancy)
+    ) %>%
+    ungroup() %>%
+    arrange(country, year)
+
+  # plot labels
+  if (selected_y_axis == "gdp") {
+    y_format <- scales::dollar
+    y_axis_label <- "GDP (USD)"
+    plot_title <- "GDP by Country"
+  } else if (selected_y_axis == "change_in_gdp_percent") {
+    y_format <- scales::percent
+    y_axis_label <- "Change in GDP (USD)"
+    plot_title <- "Change in GDP by Country"
+  } else if (selected_y_axis == "life_expectancy") {
+    y_format <- scales::comma
+    y_axis_label <- "Life Expectancy (Years)"
+    plot_title <- "Life Expectancy by Country"
+  } else if (selected_y_axis == "change_in_life_expectancy_percent") {
+    y_format <- scales::percent
+    y_axis_label <- "Change in Life Expectancy (Years)"
+    plot_title <- "Change in Life Expectancy by Country"
+  } else {
+    y_format <- scales::comma
+    y_axis_label <- selected_y_axis %>%
+      str_replace_all("_", " ") %>%
+      str_to_title()
+    plot_title <- selected_y_axis %>%
+      str_replace_all("_", " ") %>%
+      str_to_title()
+  }
+
+  # create plot
+  fig <- df %>%
+    ggplot(aes(x = year, y = !!sym(selected_y_axis), colour = country)) +
+    # suppressed warnings b/c of bug “Ignoring unknown aesthetics: text”
+    suppressWarnings(geom_line(aes(text = map(paste0(
+      "<b>Country:</b> ", country, "<br>",
+      "<b>Year:</b> ", year, "<br>",
+      "<b>", y_axis_label, ":</b> ", y_format(!!sym(selected_y_axis))
+    ), htmltools::HTML)))) +
+    scale_y_continuous(labels = y_format) +
+    labs(
+      title = plot_title,
+      x = "",
+      y = y_axis_label,
+      colour = "Country"
+    ) +
+    guides(colour = guide_legend(ncol = 1))
+
+  ggplotly(fig, tooltip = c("text")) %>%
+    config(displayModeBar = FALSE)
+}
+
+
+###########################################
+# APP BOILERPLATE
+###########################################
+app <- Dash$new()
+
+colours <- list(
+    "white" = "#ffffff",
+    "off_white" = "#F9F9F9",
+    "light_grey" = "#d2d7df",
+    "ubc_blue" = "#082145",
+    "yellow" = "#FFFF00"
+)
+
+
+###########################################
+# APP LAYOUT
+###########################################
+app$layout(
+    htmlDiv(children = list(
+        # ROW 1 - HEADER
+        htmlDiv(className = "row", style = list("backgroundColor" = colours$ubc_blue, "padding" = "10px"), children = list(
+            htmlH1("Global Life Expectancy Trends", style = list("color" = colours$white))
+        )),
+        # ROW 2 - DESCRIPTION AND BIG NUMBERS
+        htmlDiv(className = "row", style = list("backgroundColor" = colours$white), children = list(
+            # ROW 2 - COLUMN 1
+            htmlDiv(className = "pretty_container four columns", children = list(
+                htmlH6("Description:"),
+                htmlP("This dashboard app is created to help decision-makers decide where and what to invest in to improve the life expectancy for all. Our app will visualize several factors across 193 countries to better understand the global macro trends.")
+            )),
+            # ROW 2 - COLUMN 2
+            htmlDiv(className = "pretty_container two columns", children = list(
+                htmlH6("Mean Life Expectancy of the World", style = list("text-align" = "center")),
+                htmlH6(as.character(round(mean(df$life_expectancy, na.rm = TRUE), 1)), style = list("text-align" = "center"))
+            )),
+            # ROW 2 - COLUMN 3
+            htmlDiv(className = "pretty_container two columns", children = list(
+                htmlH6("World Mean GDP in US Dollars", style = list("text-align" = "center")),
+                htmlH6(scales::dollar(mean(df$gdp, na.rm = TRUE)), style = list("text-align" = "center"))
+            )),
+            # ROW 2 - COLUMN 4
+            htmlDiv(className = "pretty_container two columns", children = list(
+                htmlH6("World Standard Dev. GDP in US Dollars", style = list("text-align" = "center")),
+                htmlH6(scales::dollar(sd(df$gdp, na.rm = TRUE)), style = list("text-align" = "center"))
+            )),
+            # ROW 2 - COLUMN 5
+            htmlDiv(className = "pretty_container two columns", children = list(
+                htmlH6("Number of Countries in the World", style = list("text-align" = "center")),
+                htmlH6(as.character(length(unique(df$country))), style = list("text-align" = "center"))
+            ))
+        )),
+        # ROW 3 - PLOTS
+        htmlDiv(className = "row", style = list("backgroundColor" = colours$white), children = list(
+            # ROW 3 - COLUMN 1
+            htmlDiv(className = "pretty_container six columns", children = list(
+                htmlH6("Filters - Line Plots"),
+                htmlLabel("Select line plot countries:"),
+                dccDropdown(id = "dropdown_country", value = c("Italy", "France"), multi = TRUE, map(unique(df$country), ~ list(label = .x, value = .x))),
+                htmlLabel("Select line plot y-axis values:"),
+                dccRadioItems(id = "radio_line_y_axis", value = "Original Number", options = list(list(label = "Original Number", value = "Original Number"), list(label = "Change in Percent", value = "Change in Percent"))),
+                htmlBr(),
+                dccGraph(id = "line_life_expectancy"),
+                htmlBr(),
+                dccGraph(id = "line_gdp")
+
+            )),
+            # ROW 3 - COLUMN 2
+            htmlDiv(className = "pretty_container six columns", children = list(
+              # heat map
+              htmlH6("Filters - Heat Map"),
+              htmlLabel("Select heat map colour values:"),
+              dccRadioItems(id = "radio_heat_map_colour", value = "Life Expectancy", options = list(list(label = "Life Expectancy", value = "Life Expectancy"), list(label = "GDP", value = "GDP"), list(label = "GDP Log", value = "GDP Log"))),
+              htmlBr(),
+              dccGraph(id = "heat_map"),
+              htmlHr(),
+              # scatter plot
+              htmlH6("Filters - Scatter Plot"),
+              htmlDiv(className = "row", children = list(
+                htmlDiv(className = "six columns", children = list(
+                  htmlLabel("Select scatter plot colour values:"),
+                  dccRadioItems(id = "radio_scatter_colour", value = "Life Expectancy", options = list(list(label = "Status", value = "Status"), list(label = "Country", value = "Country")))
+                )),
+                htmlDiv(className = "six columns", children = list(
+                  htmlLabel("Select scatter plot x-axis values:"),
+                  dccRadioItems(id = "radio_scatter_x_axis", value = "GPD", options = list(list(label = "GDP", value = "GDP"), list(label = "GDP Log", value = "GDP Log")))
+                ))
+              )),
+              htmlBr(),
+              dccGraph(id = "scatter_plot")
+            ))
+        )),
+        # ROW 4 - LINKS
+        htmlDiv(className = "row", style = list("backgroundColor" = colours$white), children = list(
+          htmlDiv(className = "pretty_container two columns", children = list(
+            htmlP("GitHub Repo:"),
+            htmlA(href = "https://github.com/UBC-MDS/DSCI_532_L01_group101_project2", children = "GitHub.com")
+          )),
+          htmlDiv(className = "pretty_container two columns", children = list(
+            htmlP("Data Source:"),
+            htmlA(href = "https://www.kaggle.com/kumarajarshi/life-expectancy-who/data", children = "Kaggle.com")
+          ))
+        )),
+        htmlH6("END OF DASHBOARD")
+    )
+  )
+)
+
+###########################################
+# CALL BACKS
+###########################################
+
+# Line plot - Life expectancy
+app$callback(
+    output = list(id = "line_life_expectancy", property = "figure"),
+    params = list(input(id = "dropdown_country", property = "value"),
+                  input(id = "radio_line_y_axis", property = "value")),
+    function(selected_countries, selected_y_axis){
+      if (selected_y_axis == "Original Number"){
+        selected_y <- "life_expectancy"
+      } else if (selected_y_axis == "Change in Percent"){
+        selected_y <- "change_in_life_expectancy_percent"
+      }
+      make_line_plot(df, selected_y, selected_countries)
+    }
+)
+
+# Line plot - GDP
+app$callback(
+    output = list(id = "line_gdp", property = "figure"),
+    params = list(input(id = "dropdown_country", property = "value"),
+                  input(id = "radio_line_y_axis", property = "value")),
+    function(selected_countries, selected_y_axis){
+      if (selected_y_axis == "Original Number"){
+        selected_y <- "gdp"
+      } else if (selected_y_axis == "Change in Percent"){
+        selected_y <- "change_in_gdp_percent"
+      }
+        make_line_plot(df, selected_y, selected_countries)
+    }
+)
+
+
+
+###########################################
+# RUN APP
+###########################################
+app$run_server()
