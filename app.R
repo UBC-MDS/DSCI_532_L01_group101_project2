@@ -98,6 +98,44 @@ make_line_plot <- function(df, selected_y_axis, selected_countries) {
     config(displayModeBar = FALSE)
 }
 
+#############scatter plot####################
+#' Make scatter plots
+#'
+#' @param df The data frame to create plot with
+#' @param year_sel The numeric year for scatter plot
+#' @param status_sel list of countries status included in the plot
+#' @param x_axis "original" or "log" for x-axis
+#'
+#' @return Plotly plot
+#'
+#' @examples
+#' make_line_plot(df, year_sel=2014, status_sel=list("Developed"), x_axis="GDP Log")
+make_scatter_plot <- function(df, year_sel=2014, status_sel=list("Developed", "Developing"), x_axis="GDP Log") {
+  
+  p <- df %>% 
+    filter(year == year_sel & status %in% status_sel) %>%
+    ggplot(aes(x=gdp, y=life_expectancy, color=status,
+               text=paste("GDP: ", round(gdp, 2),
+                          "</br></br> Life Expectancy: ", life_expectancy,
+                          "</br> Status: ", status,
+                          "</br> Country: ", country))) +
+    geom_point(alpha=0.5) +
+    ylab("Life Expectancy") +
+    ggtitle(paste("Life Expectancy vs. Mean GDP (USD) in Year", year_sel))
+  
+  if (x_axis=="GDP") {
+    p <- p + xlab("GDP in USD")
+  } else if (x_axis=="GDP Log") {
+    
+    p <- p + scale_x_continuous(trans="log10") +
+      xlab("GDP in USD (log base 10)")
+  }
+  
+  ggplotly(p, tooltip="text") %>%
+    config(displayModeBar=FALSE)
+  
+}
+
 
 ###########################################
 # APP BOILERPLATE
@@ -178,12 +216,18 @@ app$layout(
               htmlH6("Filters - Scatter Plot"),
               htmlDiv(className = "row", children = list(
                 htmlDiv(className = "six columns", children = list(
-                  htmlLabel("Select scatter plot colour values:"),
-                  dccRadioItems(id = "radio_scatter_colour", value = "Life Expectancy", options = list(list(label = "Status", value = "Status"), list(label = "Country", value = "Country")))
+                  htmlLabel("Select scatter plot country status"),
+                  dccChecklist(id = "checklist_scatter_status", value = list("Developed", "Developing"), options = list(list(label = "Developed", value = "Developed"), list(label = "Developing", value = "Developing")))
                 )),
                 htmlDiv(className = "six columns", children = list(
-                  htmlLabel("Select scatter plot x-axis values:"),
-                  dccRadioItems(id = "radio_scatter_x_axis", value = "GPD", options = list(list(label = "GDP", value = "GDP"), list(label = "GDP Log", value = "GDP Log")))
+                  htmlLabel("Select scatter plot x-axis:"),
+                  dccRadioItems(id = "radio_scatter_x_axis", value = "GDP Log", options = list(list(label = "GDP", value = "GDP"), list(label = "GDP Log", value = "GDP Log")))
+                ))
+              )),
+              htmlDiv(className = "row", children = list(
+                htmlDiv(className = "eleven columns", children = list(
+                  htmlLabel("Select scatter plot year:"),
+                  dccSlider(id="slider_scatter_year", min=min(df$year), max=max(df$year), step=1, value=2015, marks=map(unique(df$year), as.character) %>% setNames(unique(df$year)))	
                 ))
               )),
               htmlBr(),
@@ -240,7 +284,16 @@ app$callback(
     }
 )
 
-
+#Scatter plot
+app$callback(
+  output = list(id = "scatter_plot", property = "figure"),
+  params = list(input(id = "slider_scatter_year", property = "value"),
+                input(id = "checklist_scatter_status", property = "value"),
+                input(id = "radio_scatter_x_axis", property = "value")),
+  function(year_sel, status_sel, x_axis){
+    make_scatter_plot(df, year_sel, status_sel, x_axis)
+  }
+)
 
 ###########################################
 # RUN APP
