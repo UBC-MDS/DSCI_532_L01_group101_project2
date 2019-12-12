@@ -25,7 +25,7 @@ Team members (group 101):
 ## Milestone 4:
 
 [Heroku app]()  
-[Reflection](https://github.com/UBC-MDS/DSCI_532_L01_group101_project2/blob/master/docs/reflection.md)   
+[Reflection](docs/reflectoin.md)   
 [App functionality](#app-functionality)   
 
 
