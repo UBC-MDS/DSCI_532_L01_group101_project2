@@ -5,6 +5,10 @@ library(dashTable)
 library(plotly)
 library(stringi)
 library(tidyverse)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(sf)
+
 
 ###########################################
 # DATA
@@ -135,6 +139,88 @@ make_scatter_plot <- function(df, year_sel=2014, status_sel=list("Developed", "D
     config(displayModeBar=FALSE)
   
 }
+
+############# World Heat Map plot####################
+#' Make world heatmap plots
+#'
+#' @param df The data frame to create plot with
+#' @param color_value The type of value (Life expectancy, GDP, GDP Log)
+#'
+#' @return Plotly plot
+#'
+#' @examples
+#' make_world_heat(df, color_value="GDP Log")
+
+make_world_heat <- function(df, color_value="Life Expectancy") {
+  
+  df <- select(df, c("life_expectancy","year","country","gdp"))
+  raw_country_names <- levels(as.factor(df$country))
+  
+  # World Map Data                   
+  world_outline <- ne_countries(scale = "medium", returnclass = "sf")
+  labels <- levels(as.factor(world_outline$sovereignt))
+  
+  labels
+  
+  # Detect Difference
+  setdiff(raw_country_names, labels)
+  
+  # Clean country names 
+  clean_data <- df %>%
+  mutate(country = case_when(country == "Bahamas" ~ "The Bahamas" ,
+                               country == "Bolivia (Plurinational State of)" ~ "Bolivia",
+                               country == "Brunei Darussalam" ~ "Brunei",
+                               country == "Cabo Verde" ~ "Cape Verde",
+                               country == "Congo" ~ "Republic of Congo",
+                               country == "Côte d'Ivoire" ~ "Ivory Coast" ,
+                               country == "Czechia" ~ "Czech Republic",                                             
+                               country == "Democratic People's Republic of Korea" ~ "North Korea",
+                               country == "Guinea-Bissau" ~ "Guinea Bissau",
+                               country == "Iran (Islamic Republic of)" ~ "Iran" ,
+                               country == "Lao People's Democratic Republic" ~ "Laos" ,
+                               country == "Micronesia (Federated States of)" ~ "Federated States of Micronesia" ,
+                               country == "Republic of Korea"  ~ "South Korea" ,                    
+                               country == "Republic of Moldova" ~ "Moldova" ,                           
+                               country == "Russian Federation" ~ "Russia" ,                            
+                               country == "Serbia" ~ "Republic of Serbia"  ,                              
+                               country == "Syrian Arab Republic"  ~ "Syria",                               
+                               country == "The former Yugoslav republic of Macedonia" ~ "Macedonia",          
+                               country == "Timor-Leste"  ~ "East Timor"  ,                          
+                               country == "Tuvalu"~ "Samoa",                                           
+                               country == "United Kingdom of Great Britain and Northern Ireland" ~ "United Kingdom" ,
+                               country == "United Republic of Tanzania" ~ "United Republic of Tanzania",                   
+                               country == "Venezuela (Bolivarian Republic of)" ~ "Venezuela" ,            
+                               country == "Viet Nam" ~ "Vietnam" ,
+                               TRUE ~ country)) %>%
+    group_by(country) %>%
+    summarise(mean_life_exp = mean(life_expectancy),
+              mean_gdp = mean(gdp),
+              mean_log_gdp = log(mean(gdp)))
+  
+  data_for_mapping <- left_join(world_outline, clean_data, by=c("sovereignt"="country"))
+  
+  if (color_value=="Life Expectancy"){
+    button_value <- "mean_life_exp"
+    mid_point <- 65
+  } else if (color_value == "GDP"){
+    button_value <- "mean_gdp"
+    mid_point <- 25000
+  } else {
+    button_value <- "mean_log_gdp"
+    mid_point <- 7.5
+  }
+  
+  
+  world_plot <- ggplot(data_for_mapping) +
+    geom_sf(size=0.05, aes(fill=!!sym(button_value))) +
+    scale_fill_gradient2(low= "#f2ff00", mid= "#00ff2a", high="#1500ff" , midpoint = mid_point, na.value="white")
+  
+  ggplotly(world_plot, tooltip="text") %>%
+    config(displayModeBar=FALSE)
+}
+
+
+
 
 
 ###########################################
@@ -295,7 +381,18 @@ app$callback(
   }
 )
 
+
+# Heat Map
+app$callback(
+  output = list(id = "heat_map", property = "figure"),
+  params = list(input(id = "radio_heat_map_colour", property = "value")),
+  function(color_value){
+    make_world_heat(df, color_value)
+  }
+)
+
 ###########################################
 # RUN APP
 ###########################################
 app$run_server()
+
