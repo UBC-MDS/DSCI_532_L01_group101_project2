@@ -25,7 +25,7 @@ Team members (group 101):
 ## Milestone 4:
 
 [Heroku app]()  
-[Reflection](docs/reflectoin.md)   
+[Reflection](docs/reflection.md)   
 [App functionality](#app-functionality)   
 
 
