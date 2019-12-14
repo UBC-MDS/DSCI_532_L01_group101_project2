@@ -26,9 +26,8 @@ Based on the feedback from peers and teaching assistants for our python Dash app
 
 ### Current limitations
 
-- The design proposal was ambitious given the time constraints. We were not able to create all the features we had originally proposed:
-  - No histogram for life expectancy was created.
-  - The line plots do have the functionality to change what the colour of the line represents.
+- Problem deploy the app on Heroku: While attempting to deploy our R app to Heroku server, we ran into a critical issue: the sf package, which we adopted as a library for creating world heatmap, failed to install. The problem was in the version of GDAL, a translator software library for geospatial data formats. To fix this, we need an additional build pack for an updated version of machine core libraries. Also, the installation process in R had to recognize the new version of GDAL and terminal access to the machine is required. However, because R is not one of the primary languages that Heroku explicitly supports, we could not resolve this problem.
+- Couldn't disable the modebar to display on the app. This is a known issue for the current version of plotly.
 - There are over 193 countries. There is the possability for a user to select all 193 countries if they wish. This results in overplotting and reduces the usefullness of the plot.
   - ![overplotting_example](../assets/overplotting_example.png)
 - Upon reviewing the data in detail there appear to be issues with data quality. Some of these issues were also noted on the [Kaggle page](https://www.kaggle.com/kumarajarshi/life-expectancy-who/data) where the data was obtained:
