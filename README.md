@@ -23,11 +23,13 @@ Team members (group 101):
 
 
 ## Milestone 4:
-
-[Heroku app]()  
+ 
 [Reflection](docs/reflection.md)   
 [App functionality](#app-functionality)   
 
+##### Heroku app:
+
+We fail to deploy the app due to the known issue of trouble installing sf library for the heatmap. Please run the app locally.
 
 
 ## App Description and Sketch
@@ -49,12 +51,12 @@ The top level of the plot contains a dashboard title.
 
 The next row of the dashboard provides a description of the data and high level summary statistics. These help the user understand how far each country is from the mean values. These values intentionally do not change with the filters so the user can always refer back to this baseline.
 
-The final row contains two columns:
+The third row contains two columns:
 
-- The filters on top of the line plots enable the user to choose which countries they specifically wish to review and the user can change the y-axis from absolve values to year over year percent change.
+- The filters on top of the line plots enable the user to choose which countries they specifically wish to review and the user can change the y-axis from absolute values to year over year percent change.
 - The life expectancy line plots allows the user to compare the life expectancy and GDP over time by country.
 - The right top graph is a heat map for these 193 countries. The user can dynamically change what the fill colour represents choosing between: life expectancy, GDP, or logged GDP. Below the heat map is the GDP by life expectancy scatter plot for all 193 countries. By using the checklist box, radio buttons and slider under the plot the user can look for interesting patterns or relationships between GDP and life expectancy.
 
-At the bottom row, we include the link to our github repo, if the users want to see the source code. The data is retrieved from [Kaggle](https://www.kaggle.com/kumarajarshi/life-expectancy-who). For the convenience of the user we have provided a button the user can click on to view the original data source.
+At the bottom row, we include the link to our github repo for users who want to see the source code. The data is retrieved from [Kaggle](https://www.kaggle.com/kumarajarshi/life-expectancy-who). For the convenience of the user we have provided a button the user can click on to view the original data source.
 
-![app-screenshot](assets/app_screenshot_2019-11-28.png)
+![app-screenshot](assets/app_screenshot_2019-12-13.png)
